@@ -7,12 +7,33 @@
 # the BlueZ package.
 #
 # GregNau 2017
+# Eurodomest (Shenzen) BLE RGB Led Bulb
+# 
+# The device is using a simple protocol
+# over Bluetooth Low Energy (BLE) connection.
+# Messages are 20 characters long and can be
+# divided into 5 groups. These are basically the
+# state and dimlevels of the different leds.
+# 
+# Example:
+# 
+# MSG = GREEN HEAD BLUE RED  WHITE
+# MSG =  01ff 0100 0000 01ff 0000
+# 
+# The first 2 bytes of every color-groups are the
+# state switches, 00 means off, while 01 means on.
+# Afterwards comes the dimlevel in hex format, from
+# 00 to ff which is 256 steps. Only exception is the
+# header group, what is possibly the global flag and
+# another which has been used by turning on and off.
+# 
+# GregNau @ 2017
 
 # Full path of 'gatttool'
 GATTTOOL='/usr/bin/gatttool'
 
 # MAC address of the bulb
-MAC="FC:58:FA:F1:CF:91"
+MAC="FC:58:FA:F1:83:60"
 
 # Var's to hold the individual leds level
 red="0000"
@@ -183,6 +204,8 @@ function display_help {
     help_text="Usage: blebulb [OPTION]... [VALUE]...\n
 Control Eurodomest BLE RGB lamp.\n\n
 
+run bluetoothctl tool discover the MAC adress of bulb (and update in this script)
+
 Options:\n
   -s, --set #w	\t\tSet white level from 0-256\n
 	    \t#r #g #b \tSet an RGB level value (white off)\n
@@ -206,11 +229,22 @@ Examples:\n
     echo -e $help_text
 }
 
+cycle(){
+  while sleep 1s; do 
+    $0 -s 255 0 255 0
+    sleep 1s;
+    $0 -s 50 0 255 0
+    sleep 1s;
+    $0 -s 255 0 50 0
+  done
+}
+
 readvalues
 
 case "$1" in
     -s|--set)	setrgb $2 $3 $4 $5 && storevalues;;
     -f|--fade)	fade $2 $3 $4 $5 && storevalues;;
+    --cycle)	cycle;; 
     -c|--color)	setcolor $2 && storevalues;;
     -h|--help)	display_help;;
     --current)	echo $red_state $green_state $blue_state $white_state;;
